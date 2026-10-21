@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Would That Pitch Be a Strike?</title>
+<style>
+:root {
+  --bg: #ffffff; --fg: #000000; --muted: #444444; --line: #000000; --soft: #bbbbbb;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg: #121212; --fg: #f2f2f2; --muted: #c4c4c4; --line: #f2f2f2; --soft: #555555; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --bg: #121212; --fg: #f2f2f2; --muted: #c4c4c4; --line: #f2f2f2; --soft: #555555; color-scheme: dark; }
+html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: Georgia, "Times New Roman", serif; line-height: 1.55; font-size: 17px; }
+main { max-width: 780px; margin: 0 auto; padding: 28px 18px 60px; }
+h1 { font-size: 1.7rem; margin: 0 0 4px; }
+h2 { font-size: 1.2rem; margin: 0 0 8px; }
+p { margin: 8px 0; }
+.sub { color: var(--muted); margin-bottom: 18px; }
+.name { display: flex; gap: 14px; flex-wrap: wrap; margin: 14px 0 6px; }
+.name label { font-weight: bold; }
+input[type=text], input[type=number], textarea {
+  font: inherit; color: var(--fg); background: var(--bg); border: 1px solid var(--line); padding: 6px 8px; border-radius: 0;
+}
+input[type=text] { width: 220px; max-width: 100%; }
+input[type=number] { width: 100px; }
+textarea { width: 100%; min-height: 84px; display: block; margin-top: 4px; }
+.part { border-top: 2px solid var(--line); margin-top: 30px; padding-top: 14px; }
+table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+th, td { border: 1px solid var(--line); padding: 6px 9px; text-align: left; vertical-align: top; }
+th { width: 34%; }
+.tip { font-style: italic; color: var(--muted); }
+.q { margin: 14px 0 0; font-weight: bold; }
+.opts label { display: block; margin: 3px 0; }
+.chk { margin: 10px 0; }
+.chk label { display: inline-block; margin-right: 10px; }
+button { font: inherit; color: var(--fg); background: var(--bg); border: 1px solid var(--line); padding: 5px 14px; cursor: pointer; border-radius: 0; }
+button:hover { background: var(--fg); color: var(--bg); }
+:focus-visible { outline: 3px solid var(--fg); outline-offset: 2px; }
+.msg { margin-left: 10px; font-style: italic; }
+.key { display: none; border: 2px dashed var(--line); padding: 8px 14px; margin-top: 14px; }
+body.keymode .key { display: block; }
+.keybanner { display: none; font-weight: bold; border: 2px solid var(--line); padding: 6px 12px; margin-bottom: 14px; }
+body.keymode .keybanner { display: block; }
+.scroll { overflow-x: auto; }
+.sim { border: 1px solid var(--line); padding: 10px; margin: 12px 0; }
+.sim canvas { width: 100%; height: auto; display: block; }
+.ctrl { display: flex; flex-wrap: wrap; gap: 18px; margin: 10px 0 4px; }
+.ctrl label { display: block; font-weight: bold; }
+.ctrl input[type=range] { width: 230px; max-width: 100%; accent-color: var(--fg); }
+.read { margin-top: 8px; min-height: 3.2em; }
+.locked { font-style: italic; color: var(--muted); }
+@media print {
+  button, .noprint, .sim { display: none !important; }
+  main { padding: 0; }
+  .part { break-inside: avoid; }
+  textarea { border: 1px solid #000; }
+}
+</style>
+</head>
+<body>
+<main>
+
+<div class="keybanner">Teacher key view. Keys appear in dashed boxes and the simulator readouts are unlocked. Share the link without #key with students.</div>
+
+<h1>Would That Pitch Be a Strike?</h1>
+<p class="sub">Extending “A Falling Pitch” &middot; horizontally launched projectile model &middot; individual work</p>
+
+<div class="name">
+  <label>Name <input type="text" autocomplete="off"></label>
+  <label>Period <input type="text" style="width:80px" autocomplete="off"></label>
+</div>
+
+<h2>The setup</h2>
+<p>A pitcher throws a fastball exactly level (no upward or downward angle). We will treat it as a horizontally launched projectile: gravity is the only force, there is no air resistance, and the ball travels all the way to the plate.</p>
+<table>
+<tr><th>Release speed</th><td>90 mph = 40.2 m/s (1 mph = 0.447 m/s)</td></tr>
+<tr><th>Release height</th><td>1.8 m above the ground</td></tr>
+<tr><th>Distance to home plate</th><td>18.44 m</td></tr>
+<tr><th>Strike zone for this batter</th><td>0.5 m (knees) to 1.1 m (chest) above the ground</td></tr>
+</table>
+
+<!-- PART 1 -->
+<section class="part" id="p1">
+<h2>Part 1: Predict before you calculate</h2>
+<p class="q">By the time the ball reaches the plate, how far will gravity have pulled it down?</p>
+<div class="opts" role="radiogroup" aria-label="Prediction">
+  <label><input type="radio" name="pred"> Less than 0.25 m</label>
+  <label><input type="radio" name="pred"> About 0.5 m</label>
+  <label><input type="radio" name="pred"> About 1 m</label>
+  <label><input type="radio" name="pred"> More than 1.5 m</label>
+</div>
+<p class="q">Explain your reasoning in a sentence or two.</p>
+<textarea aria-label="Prediction reasoning"></textarea>
+<div class="key"><b>Key:</b> About 1 m (1.03 m). Students often guess very small because the ball is “so fast.” Speed sets how far the ball goes in the time available, not how far it falls in that time.</div>
+</section>
+
+<!-- PART 2 -->
+<section class="part" id="p2">
+<h2>Part 2: Calculate by hand</h2>
+<p>Use the two-column method and the GUESS steps. Show your work on paper or in the box, then check each answer.</p>
+<table>
+<tr><th>Horizontal</th><td>a = 0 m/s², vₓ = 40.2 m/s, Δx = 18.44 m</td></tr>
+<tr><th>Vertical</th><td>a = −9.8 m/s², vᵢᵧ = 0 m/s, Δy = ?</td></tr>
+</table>
+<textarea aria-label="Part 2 work" placeholder="Show your work here."></textarea>
+<p class="tip">Watch out: time is the only quantity both columns share. Find it in the column where you know the most.</p>
+<div class="chk"><label>Flight time <input type="number" step="any" id="t2" data-answer="0.458" data-tol="0.01"> s</label> <button type="button" data-for="t2">Check</button><span class="msg" role="status"></span></div>
+<div class="chk"><label>Distance the ball falls <input type="number" step="any" id="d2" data-answer="1.03" data-tol="0.03"> m</label> <button type="button" data-for="d2">Check</button><span class="msg" role="status"></span></div>
+<div class="chk"><label>Height of the ball over the plate <input type="number" step="any" id="h2" data-answer="0.77" data-tol="0.03" data-unlock="1"> m</label> <button type="button" data-for="h2">Check</button><span class="msg" role="status"></span></div>
+<p class="q">Is it a strike? How do you know?</p>
+<textarea aria-label="Strike or ball"></textarea>
+<div class="key"><b>Key:</b> t = 18.44 ÷ 40.2 ≈ 0.458 s. Δy = ½(−9.8)(0.458)² ≈ −1.03 m. Height = 1.8 − 1.03 ≈ 0.77 m, inside the 0.5 to 1.1 m zone, so a strike. Getting the height right unlocks the numbers in the simulator below.</div>
+</section>
+
+<!-- PART 3 -->
+<section class="part" id="p3">
+<h2>Part 3: Stress-test the model</h2>
+<p>The simulator draws the flight of the pitch. Its numbers stay locked until you get the height in Part 2 right, so the simulator confirms your thinking instead of replacing it. Vertical scale is exaggerated.</p>
+
+<div class="sim">
+  <canvas id="cv" width="720" height="290" role="img" aria-label="Side view of a pitch following a parabolic path toward the strike zone"></canvas>
+  <div class="ctrl">
+    <label>Speed: <span id="spv">90</span> mph <input type="range" id="sp" min="60" max="105" step="1" value="90"></label>
+    <label>Release height: <span id="hv">1.80</span> m <input type="range" id="hh" min="1.5" max="2.2" step="0.05" value="1.8"></label>
+  </div>
+  <div class="read" id="read" aria-live="polite"></div>
+</div>
+
+<p class="q">3a. Solve by hand: what is the slowest pitch (in mph) that still reaches the plate at 0.5 m or higher, released from 1.8 m?</p>
+<textarea aria-label="Part 3a work"></textarea>
+<div class="chk"><label>Slowest speed <input type="number" step="any" id="a3a" data-answer="80" data-tol="1"> mph</label> <button type="button" data-for="a3a">Check</button><span class="msg" role="status"></span></div>
+<div class="key"><b>Key:</b> Work backward: allowed drop = 1.8 − 0.5 = 1.3 m, so t = √(2(1.3) ÷ 9.8) = 0.515 s, so v = 18.44 ÷ 0.515 = 35.8 m/s ≈ 80 mph.</div>
+
+<p class="q">3b. Predict, then test: where does a 70 mph pitch from 1.8 m cross the plate?</p>
+<div class="chk"><label>Height over the plate <input type="number" step="any" id="a3b" data-answer="0.10" data-tol="0.04"> m</label> <button type="button" data-for="a3b">Check</button><span class="msg" role="status"></span></div>
+<p class="q">Does that match how a 70 mph pitch behaves in a real game? What does that tell you about the model?</p>
+<textarea aria-label="Part 3b reflection"></textarea>
+<div class="key"><b>Key:</b> 70 mph = 31.3 m/s, t = 0.589 s, drop = 1.70 m, height ≈ 0.10 m (nearly in the dirt). Real slow pitches do not bounce that early, which is the opening to Part 4: real pitchers use spin to fight gravity.</div>
+
+<p class="q">3c. Pitch duel. Choose your own speed (60 to 100 mph) and release height. Give them to your partner without your answer.</p>
+<table>
+<tr><th>My pitch</th><td>Speed: <input type="number" style="width:80px"> mph &nbsp; Release height: <input type="number" step="any" style="width:80px"> m</td></tr>
+<tr><th>My partner’s predicted height over the plate</th><td><input type="number" step="any" style="width:90px"> m</td></tr>
+<tr><th>My own calculated height over the plate</th><td><input type="number" step="any" style="width:90px"> m</td></tr>
+<tr><th>Partner’s initials after we compare with the simulator</th><td><input type="text" style="width:80px"></td></tr>
+</table>
+<p class="q">If your answers differed, whose work held the error and what was it?</p>
+<textarea aria-label="Duel reconciliation"></textarea>
+</section>
+
+<!-- PART 4 -->
+<section class="part" id="p4">
+<h2>Part 4: Is the model good enough?</h2>
+<p>Real data about pitching: air drag slows a real fastball by roughly 8 to 10 mph before it reaches the plate, backspin on a fastball gives a small lift force, and topspin on a curveball adds a downward force.</p>
+
+<p class="q">1. Without calculating, would drag make the real drop bigger or smaller than your Part 2 answer? Use the equations to explain what happens to flight time.</p>
+<textarea aria-label="Drag explanation"></textarea>
+<div class="key"><b>Key:</b> Bigger. A slower ball takes longer to cover 18.44 m, and the longer the time, the more the vertical motion has to act (Δy depends on t²). Students who say “slower means less drop” are mixing up speed and time.</div>
+
+<p class="q">2. The model says gravity is the only force. Name two other forces that act on a real pitch and say which direction each pushes or pulls.</p>
+<textarea aria-label="Other forces"></textarea>
+<div class="key"><b>Key:</b> Drag (opposite the motion, mostly horizontal), Magnus/spin force (up for backspin, down for topspin, sideways for sidespin).</div>
+
+<p class="q">3. Claim, evidence, reasoning. Is the horizontally launched projectile model good enough to decide whether a real 90 mph fastball is a strike? Use numbers from this activity.</p>
+<textarea aria-label="Claim evidence reasoning" style="min-height:140px"></textarea>
+<div class="key"><b>Key:</b> Strong answers cite the 0.77 m prediction and the 0.5 to 1.1 m zone, note that the margin to the bottom of the zone is only about 0.27 m while drag alone adds extra drop, and conclude the model is a good first approximation but not precise enough for close calls. Either claim is acceptable if the reasoning uses the numbers.</div>
+
+<p class="q">4. Aspire extension: pitchers actually release the ball about 1.7 m in front of the pitching rubber, so the real flight distance is about 16.7 m, not 18.44 m. Recalculate the height over the plate for a 90 mph pitch from 1.8 m.</p>
+<div class="chk"><label>Height over the plate <input type="number" step="any" id="a4" data-answer="0.96" data-tol="0.03"> m</label> <button type="button" data-for="a4">Check</button><span class="msg" role="status"></span></div>
+<p class="q">Does fixing that assumption move the pitch toward the middle of the strike zone or toward the edge? What does this tell you about checking assumptions?</p>
+<textarea aria-label="Extension reflection"></textarea>
+<div class="key"><b>Key:</b> t = 16.7 ÷ 40.2 = 0.415 s, drop = 0.84 m, height ≈ 0.96 m, closer to the top of the zone. One assumption can shift the answer more than the arithmetic does.</div>
+
+<p class="noprint" style="margin-top:20px"><button type="button" onclick="window.print()">Print this page</button></p>
+</section>
+
+</main>
+
+<script>
+(function () {
+  var G = 9.8, D = 18.44, MPH = 0.44704, ZONE_LO = 0.5, ZONE_HI = 1.1;
+  var unlocked = false;
+  var cv = document.getElementById("cv"), ctx = cv.getContext("2d");
+  var sp = document.getElementById("sp"), hh = document.getElementById("hh");
+  var spv = document.getElementById("spv"), hv = document.getElementById("hv");
+  var read = document.getElementById("read");
+
+  function css(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || "#000"; }
+
+  function model() {
+    var v = parseFloat(sp.value) * MPH, h = parseFloat(hh.value);
+    var tGround = Math.sqrt(2 * h / G);
+    var tPlate = D / v;
+    var hitsDirt = tPlate > tGround;
+    var hPlate = h - 0.5 * G * tPlate * tPlate;
+    return { v: v, h: h, tGround: tGround, tPlate: tPlate, hitsDirt: hitsDirt, hPlate: hPlate };
+  }
+
+  function draw() {
+    var m = model();
+    var fg = css("--fg"), soft = css("--soft");
+    var W = cv.width, H = cv.height;
+    ctx.clearRect(0, 0, W, H);
+    var x0 = 40, x1 = 670, gy = 255, sy = 95;
+    var sx = (x1 - x0) / D;
+    function X(x) { return x0 + x * sx; }
+    function Y(y) { return gy - y * sy; }
+
+    ctx.lineWidth = 1.5; ctx.strokeStyle = fg; ctx.fillStyle = fg;
+    ctx.font = "13px Georgia, serif";
+
+    // ground
+    ctx.beginPath(); ctx.moveTo(10, gy); ctx.lineTo(W - 10, gy); ctx.stroke();
+    // mound (simple)
+    ctx.beginPath(); ctx.moveTo(10, gy); ctx.lineTo(x0 - 6, gy - 14); ctx.lineTo(x0 + 18, gy - 14); ctx.lineTo(x0 + 40, gy); ctx.stroke();
+    // plate
+    ctx.beginPath(); ctx.moveTo(x1 - 14, gy); ctx.lineTo(x1 + 14, gy); ctx.lineWidth = 4; ctx.stroke(); ctx.lineWidth = 1.5;
+
+    // strike zone
+    ctx.strokeRect(x1 - 8, Y(ZONE_HI), 16, Y(ZONE_LO) - Y(ZONE_HI));
+    ctx.fillText("strike zone", x1 - 78, Y(ZONE_HI) - 6);
+
+    // release height marker
+    ctx.fillText("release " + m.h.toFixed(2) + " m", x0 + 4, Y(m.h) - 10);
+
+    // trajectory
+    var xEnd = m.hitsDirt ? m.v * m.tGround : D;
+    ctx.setLineDash([]); ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    var n = 120;
+    for (var i = 0; i <= n; i++) {
+      var x = xEnd * i / n;
+      var y = m.h - 0.5 * G * Math.pow(x / m.v, 2);
+      if (i === 0) ctx.moveTo(X(x), Y(y)); else ctx.lineTo(X(x), Y(y));
+    }
+    ctx.stroke(); ctx.lineWidth = 1.5;
+
+    // ball at end
+    var yEnd = m.hitsDirt ? 0 : m.hPlate;
+    ctx.beginPath(); ctx.arc(X(xEnd), Y(yEnd), 5, 0, 2 * Math.PI); ctx.fill();
+
+    // reference line at release height
+    ctx.strokeStyle = soft; ctx.setLineDash([4, 4]);
+    ctx.beginPath(); ctx.moveTo(X(0), Y(m.h)); ctx.lineTo(X(D), Y(m.h)); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // readout
+    if (!unlocked) {
+      read.innerHTML = '<span class="locked">Numbers locked. Check your height in Part 2 to unlock them.</span>';
+    } else {
+      var verdict;
+      if (m.hitsDirt) verdict = "Hits the ground before the plate (" + (m.v * m.tGround).toFixed(1) + " m out).";
+      else if (m.hPlate > ZONE_HI) verdict = "Ball (high).";
+      else if (m.hPlate >= ZONE_LO) verdict = "Strike.";
+      else verdict = "Ball (low).";
+      read.innerHTML =
+        "Speed " + m.v.toFixed(1) + " m/s &middot; flight time to plate " + m.tPlate.toFixed(3) + " s &middot; drop " +
+        (0.5 * G * m.tPlate * m.tPlate).toFixed(2) + " m<br><b>" +
+        (m.hitsDirt ? "" : "Height over plate " + m.hPlate.toFixed(2) + " m. ") + verdict + "</b>";
+    }
+  }
+
+  function update() { spv.textContent = sp.value; hv.textContent = parseFloat(hh.value).toFixed(2); draw(); }
+  sp.addEventListener("input", update);
+  hh.addEventListener("input", update);
+  if (window.matchMedia) {
+    var mq = window.matchMedia("(prefers-color-scheme: dark)");
+    if (mq.addEventListener) mq.addEventListener("change", draw);
+  }
+
+  function unlock() { unlocked = true; draw(); }
+
+  if (location.hash === "#key") { document.body.classList.add("keymode"); unlocked = true; }
+  window.addEventListener("hashchange", function () {
+    var k = location.hash === "#key";
+    document.body.classList.toggle("keymode", k);
+    if (k) unlock();
+  });
+
+  document.querySelectorAll("button[data-for]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var inp = document.getElementById(btn.getAttribute("data-for"));
+      var msg = btn.parentNode.querySelector(".msg");
+      var v = parseFloat(inp.value);
+      if (isNaN(v)) { msg.textContent = "Enter a number first."; return; }
+      var ans = parseFloat(inp.getAttribute("data-answer"));
+      var tol = parseFloat(inp.getAttribute("data-tol"));
+      var ok = Math.abs(v - ans) <= tol;
+      msg.textContent = ok
+        ? "Matches. Make sure your written work shows how you got there."
+        : "Not yet. Recheck your units and which column each quantity belongs in.";
+      if (ok && inp.getAttribute("data-unlock")) unlock();
+    });
+  });
+
+  update();
+})();
+</script>
+</body>
+</html>
